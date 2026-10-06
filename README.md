@@ -517,7 +517,7 @@ Short, ambiguous messages get in-between probabilities. Longer messages quickly 
 
 ---
 
-## 10. References
+## 9. References
 
 1. Wikipedia, *Naive Bayes classifier*, especially the sections "Multinomial naive Bayes" and "Document classification": <https://en.wikipedia.org/wiki/Naive_Bayes_classifier>
 2. V. Metsis, I. Androutsopoulos and G. Paliouras, *"Spam Filtering with Naive Bayes – Which Naive Bayes?"*, Proceedings of the 3rd Conference on Email and Anti-Spam (CEAS 2006), Mountain View, CA, USA, 2006.
