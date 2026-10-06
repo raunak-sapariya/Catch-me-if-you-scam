@@ -29,12 +29,10 @@ DATA_DIR = Path(__file__).parent / "data" / "preprocessed"
 
 
 def tokenize(text):
-    """Turn an email into a list of uppercase words."""
     return re.findall(r"[A-Z]+", text.upper())
 
 
 def load_emails():
-    """Read every email in data/preprocessed/enron*/ham and .../spam as a (text, label) pair."""
     emails = []
     for label in ["spam", "ham"]:
         for path in sorted(DATA_DIR.glob(f"enron*/{label}/*.txt")):
@@ -56,12 +54,19 @@ class NaiveBayesSpamFilter:
                 ham_counts.update(tokenize(text))
                 n_ham += 1
 
-        # Prior probabilities: fraction of training emails in each class
+        """
+        Estimate the prior probabilities of spam and ham.
+        """
         self.p_spam = n_spam / len(emails)
         self.p_ham = n_ham / len(emails)
 
-        # Likelihoods with Laplace (add-one) smoothing, so no word gets probability 0:
-        #   P(word | class) = (count of word in class + 1) / (total words in class + vocabulary size)
+        """
+        Estimate the likelihood of each word given spam or ham, using Laplace smoothing.
+        This prevents any word from having a zero probability.
+            P(word | spam) = (count(word in spam) + 1) / (total words in spam + vocabulary size)
+            P(word | ham) = (count(word in ham) + 1) / (total words in ham + vocabulary size)
+        The log ratio ln[P(word|spam) / P(word|ham)] is stored for each word.
+        """
         vocab = set(spam_counts) | set(ham_counts)
         spam_total = sum(spam_counts.values())
         ham_total = sum(ham_counts.values())
@@ -83,25 +88,30 @@ class NaiveBayesSpamFilter:
 
 
 def main():
-    # 1. Load the data
     emails = load_emails()
     n_spam = sum(1 for _, label in emails if label == "spam")
     print(f"Loaded {len(emails)} emails: {n_spam} spam, {len(emails) - n_spam} ham")
 
-    # 2. Shuffle and split: 80% for training, 20% for testing
+    """
+    Split into training and test sets (80% / 20%)
+    """
     random.seed(42)  # fixed seed so the split (and the results) are the same every run
     random.shuffle(emails)
     split = int(0.8 * len(emails))
     train_set, test_set = emails[:split], emails[split:]
     print(f"Training on {len(train_set)} emails, testing on {len(test_set)} emails\n")
 
-    # 3. Train
+    """
+    Train the model and print some statistics
+    """
     model = NaiveBayesSpamFilter()
     model.train(train_set)
     print(f"Prior probabilities: P(spam) = {model.p_spam:.3f}, P(ham) = {model.p_ham:.3f}")
     print(f"Vocabulary size: {len(model.word_log_ratio)} words\n")
 
-    # 4. Test: count (actual, predicted) pairs to build the confusion matrix
+    """
+    Test: count (actual, predicted) pairs to build the confusion matrix
+    """
     results = Counter((label, model.predict(text)) for text, label in test_set)
     tp = results[("spam", "spam")]  # spam correctly caught
     fn = results[("spam", "ham")]   # spam that got through
@@ -116,18 +126,23 @@ def main():
     print(f"actual ham    {tn:>13}  {fp:>14}")
     print(f"actual spam   {fn:>13}  {tp:>14}")
 
-    # Words with the biggest ln[P(word|spam) / P(word|ham)] are the strongest spam signals
+    """
+    Words with the biggest ln[P(word|spam) / P(word|ham)] are the strongest spam signals
+    """
     ranked = sorted(model.word_log_ratio, key=model.word_log_ratio.get, reverse=True)
     print("\nTop spam words:", ", ".join(ranked[:10]))
     print("Top ham words :", ", ".join(ranked[-10:]))
 
-    # 5. Try your own messages
+    """
+    Try your own messages:
+    The probability of being spam given a message is calculated from the score using the logistic function:
+        P(spam | message) = 1 / (1 + e^(-score))
+    """
     while True:
         message = input("\nType a message to classify (or press Enter to quit): ")
         if not message:
             break
         score = model.score(message)
-        # P(spam|msg) + P(ham|msg) = 1, so P(spam|msg) = 1 / (1 + e^(-score))
         p_spam = 1 / (1 + math.exp(-max(score, -700)))  # max() keeps exp() from overflowing
         print(f"-> {model.predict(message).upper()}  (P(spam | message) = {p_spam:.2%})")
 
