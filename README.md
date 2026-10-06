@@ -16,8 +16,7 @@ A spam filter written from scratch in Python for a Probability and Statistics pr
 6. [How the code works](#6-how-the-code-works)
 7. [Evaluation method](#7-evaluation-method)
 8. [Results](#8-results)
-9. [Limitations and possible improvements](#9-limitations-and-possible-improvements)
-10. [References](#10-references)
+9. [References](#10-references)
 
 ---
 
@@ -515,27 +514,6 @@ The classifier has learned that "talks about Enron business" means legitimate. T
 | please see attached report | HAM | 12.39% |
 
 Short, ambiguous messages get in-between probabilities. Longer messages quickly reach 100% or 0%, as section 9 explains.
-
----
-
-## 9. Limitations and possible improvements
-
-### Limitations
-
-1. **The independence assumption is false, so the probabilities are overconfident.** Words like "click", "here" and "claim" tend to appear together, but the model treats each as separate evidence and counts the same signal several times. Classification is still very accurate, but the printed probabilities often show 100.00% or 0.00%. They should be read as "very sure", not as exact probabilities.
-2. **Company-specific vocabulary.** The strongest ham signals are Enron names and jargon. On a different person's inbox the filter would lose many of its best clues and perform worse until retrained on their own emails.
-3. **Ham and spam come from different sources and years.** In the subsets used here, all ham dates from 1999–2002 and comes from Enron mailboxes, while spam dates from 2001–2005 and comes from outside collections. Part of what the model learns may be "old Enron email vs. newer email" rather than "legitimate vs. spam", so real-world accuracy would probably be lower.
-4. **Random split instead of a time-ordered split.** The original paper trains on older emails and tests on newer ones, as a real filter would. A random split is easier, because near-identical spam emails can end up in both the training and the test set.
-5. **Bag of words.** Word order and phrases are ignored ("not free" looks like "free"), and so are numbers, punctuation and words never seen in training.
-6. **A fixed 50% threshold.** Both kinds of mistake are treated as equally bad, even though losing a real email is worse.
-
-### Possible improvements
-
-- **Tune the threshold:** classify as spam only if $P(S \mid D) > \lambda$ for a high $\lambda$, such as 0.99. This is the same as requiring $L > \ln\frac{\lambda}{1 - \lambda}$, and it trades a few more missed spam emails for fewer lost real emails.
-- **k-fold cross-validation:** repeat the train/test split several times and average the results, to get a more reliable accuracy estimate with a confidence interval.
-- **Train on some subsets and test on others** (for example, train on enron1–3 and test on enron5–6) to measure how well the filter generalises to new mailboxes.
-- **Try other Naive Bayes variants,** such as Bernoulli Naive Bayes (did the word appear or not), which the original paper compares.
-- **Richer features:** word pairs (bigrams), keeping numbers and symbols like `$` and `!`, or removing very common words ("the", "and").
 
 ---
 
