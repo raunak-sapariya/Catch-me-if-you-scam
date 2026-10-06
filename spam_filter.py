@@ -15,8 +15,6 @@ product of many tiny probabilities (which would round down to 0) into a sum:
     ln[P(spam|email) / P(ham|email)] = ln[P(spam) / P(ham)] + sum of ln[P(wi|spam) / P(wi|ham)]
 
 If this value is greater than 0, spam is more likely than ham, so the email is spam.
-
-Run: python spam_filter.py   (emails are read from data/preprocessed/enron*/ham and .../spam)
 """
 
 import math
